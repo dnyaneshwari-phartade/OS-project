@@ -88,6 +88,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->pgid = p->pid;
+  p->stopped = 0;
+  p->reported = 0;
 
   release(&ptable.lock);
 
@@ -198,6 +201,7 @@ fork(void)
   }
   np->sz = curproc->sz;
   np->parent = curproc;
+  np->pgid = curproc->pgid;
   *np->tf = *curproc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -284,6 +288,15 @@ wait(void)
       if(p->parent != curproc)
         continue;
       havekids = 1;
+      
+      //added here, stopped child
+      if(p->stopped && p->state != ZOMBIE && !p->reported && p->pgid != curproc->pgid){
+      p->reported = 1;
+      pid = p->pid;
+      release(&ptable.lock);
+      return pid;
+      }
+      
       if(p->state == ZOMBIE){
         // Found one.
         pid = p->pid;
@@ -333,7 +346,7 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      if(p->state != RUNNABLE || p->stopped )
         continue;
 
       // Switch to chosen process.  It is the process's job
@@ -523,7 +536,8 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
+    //cprintf("%d %s %s", p->pid, state, p->name);
+    cprintf("%d %s %s pgid=%d", p->pid, state, p->name, p->pgid );
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
@@ -532,3 +546,128 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+
+
+//
+int fgpgid = 1;
+
+void
+killpgrp(int g)
+{
+ struct proc *p;
+ 
+ acquire(&ptable.lock);
+ for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  if(p->pgid == g && p->state != UNUSED){
+   p->killed = 1;
+   p->stopped = 0;
+   if(p->state == SLEEPING)
+    p->state = RUNNABLE;
+  }
+ }
+ release(&ptable.lock);
+}
+
+void
+killfg(void)
+{
+if(fgpgid != 1)
+ killpgrp(fgpgid);
+}
+
+void
+stopfg(void)
+{
+struct proc *p;
+acquire(&ptable.lock);
+if(fgpgid != 1){
+ for(p = ptable.proc; p< &ptable.proc[NPROC]; p++){
+   if(p->pgid == fgpgid && p->state != UNUSED && p->state != ZOMBIE){
+   p->stopped = 1;
+   p->reported = 0;
+   wakeup1(p->parent);
+   }
+ }
+}
+ release(&ptable.lock);
+}
+
+void
+contpg(int g){
+
+struct proc *p;
+
+acquire(&ptable.lock);
+for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+	if(p->pgid == g && p->state != UNUSED)
+	p->stopped = 0;
+   release(&ptable.lock);
+
+}
+
+
+void
+setfg(int g){
+ acquire(&ptable.lock);
+ fgpgid = g ;
+ release(&ptable.lock);
+
+}
+
+int jobstate(int pid){
+	struct proc *p;
+	int r=0;
+	
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++ ){
+		if(p->pid == pid && p->state != UNUSED){
+			if(p->state == ZOMBIE)
+				r = 0;
+			else if(p->stopped)
+			 	r = 2;
+			else 
+				r = 1;
+			break;
+		}
+	}
+	release(&ptable.lock);
+	return r;
+}
+
+int setpgid(int pid, int g){
+	struct proc *p;
+	struct proc *me = myproc();
+	int r = -1;
+	
+	if(pid==0)
+		pid = me->pid;
+	if(g==0)
+		g = pid;
+		
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p< &ptable.proc[NPROC]; p++){
+		if(p->pid == pid && p->state != UNUSED && (p == me || p->parent == me)){
+			p->pgid = g;
+			r = 0;
+			break;
+		}
+	}
+	release(&ptable.lock);
+	return r;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

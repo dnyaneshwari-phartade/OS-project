@@ -121,6 +121,16 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 
+//added here
+extern int fgpgid;
+void killpgrp(int);
+void killfg(void);
+void stopfg(void);
+void contpg(int);
+void setfg(int);
+int jobstate(int);
+int setpgid(int, int);
+
 // swtch.S
 void            swtch(struct context**, struct context*);
 

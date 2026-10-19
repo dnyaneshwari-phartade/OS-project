@@ -191,7 +191,8 @@ struct {
 void
 consoleintr(int (*getc)(void))
 {
-  int c, doprocdump = 0;
+//added variables
+  int c, doprocdump = 0, dokill = 0, dostop = 0 ;
 
   acquire(&cons.lock);
   while((c = getc()) >= 0){
@@ -200,6 +201,17 @@ consoleintr(int (*getc)(void))
       // procdump() locks cons.lock indirectly; invoke later
       doprocdump = 1;
       break;
+      
+    //added this case
+    case C('C'):
+    	dokill = 1;
+    	break;
+    	
+   //added this case as well
+    case C('Z'):
+    	dostop = 1;
+    	break;
+    
     case C('U'):  // Kill line.
       while(input.e != input.w &&
             input.buf[(input.e-1) % INPUT_BUF] != '\n'){
@@ -230,6 +242,15 @@ consoleintr(int (*getc)(void))
   if(doprocdump) {
     procdump();  // now call procdump() wo. cons.lock held
   }
+  //added this
+  if(dokill){
+    //cprintf("ctrl + c done \n");
+    killfg();
+  }
+  if(dostop){
+    //cprintf("ctrl + z done \n");
+    stopfg();
+  }
 }
 
 int
@@ -241,6 +262,22 @@ consoleread(struct inode *ip, char *dst, int n)
   iunlock(ip);
   target = n;
   acquire(&cons.lock);
+  
+  //added here
+  while(myproc()->pgid != fgpgid){
+  	if(myproc()->killed){
+  	   release(&cons.lock);
+  	   ilock(ip);
+  	   return -1;
+  	}
+  	release(&cons.lock);
+  	yield();
+  	acquire(&cons.lock);
+  }
+  
+  
+  
+  
   while(n > 0){
     while(input.r == input.w){
       if(myproc()->killed){
@@ -279,6 +316,7 @@ consolewrite(struct inode *ip, char *buf, int n)
   acquire(&cons.lock);
   for(i = 0; i < n; i++)
     consputc(buf[i] & 0xff);
+    
   release(&cons.lock);
   ilock(ip);
 

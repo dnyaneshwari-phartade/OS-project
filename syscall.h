@@ -20,3 +20,9 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_setpgid 22
+#define SYS_setfg 23
+#define SYS_killpg 24
+#define SYS_contpg 25
+#define SYS_jobstate 26
+

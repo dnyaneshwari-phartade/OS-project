@@ -89,3 +89,75 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+
+//added these :)
+int
+sys_setpgid(void){
+	int pid, g;
+	if(argint(0, &pid) < 0 || argint(1, &g) < 0)
+		return -1;
+	return setpgid(pid, g);
+
+}
+
+int
+sys_setfg(void){
+	int g;
+	if(argint(0, &g) < 0)
+		return -1;
+	setfg(g);
+	return 0;
+
+}
+
+
+int
+sys_killpg(void){
+	int g;
+	if(argint(0, &g) < 0 || g <= 1)
+		return -1;
+	killpgrp(g);
+	return 0;
+
+}
+
+int
+sys_contpg(void){
+	int g;
+	if(argint(0, &g) < 0)
+		return -1;
+	contpg(g);
+	return 0;
+
+}
+
+int
+sys_jobstate(void){
+	int pid;
+	if(argint(0, &pid) < 0)
+		return -1;
+	return jobstate(pid);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

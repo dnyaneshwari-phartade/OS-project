@@ -37,3 +37,14 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+
+//added these :)
+int setpgid(int, int);
+int setfg(int);
+int killpg(int);
+int contpg(int);
+int jobstate(int);
+
+
+

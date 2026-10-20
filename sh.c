@@ -62,6 +62,35 @@ int jobnumber(char *arg){
 }
 
 
+void refreshjobs(void){
+	int i,s;
+	for(i=0; i<MAXJOBS; i++){
+		if(jobs[i].pgid == 0)
+			continue;
+		s = jobstate(jobs[i].pgid);
+		if(s==0){
+		   printf(1, "[%d] Done %s\n", i+1, jobs[i].cmd);
+		   jobs[i].pgid = 0;
+		   
+		}
+		else {
+		   jobs[i].state = s;
+		}
+	}
+
+}
+
+
+void printjobs(void){
+	int i;
+	for(i=0; i<MAXJOBS; i++){
+		if(jobs[i].pgid == 0)
+		   continue;
+		printf(1, "[%d] %s %s\n", i+1, jobs[i].state == RUNNING ? "Running" : "Stopped", jobs[i].cmd);
+	}	
+	
+}
+
 
 
 

@@ -94,6 +94,34 @@ void printjobs(void){
 
 
 
+void waitfg(int id){
+	int pid;
+	int pgid = jobs[id-1].pgid;
+	
+	setfg(pgid);
+	while(1){
+		pid = wait();
+		if(pid < 0 || pid==pgid)
+		   break;
+	
+	}
+	setfg(1);
+	
+	if(jobstate(pgid) == 2){
+		jobs[id - 1].state = STOPPED;
+		printf(1, "\n[%d] Stopped %s\n", id, jobs[id - 1].cmd);
+	
+	}
+	else {
+	jobs[id-1].pgid = 0;
+	}
+	
+	
+}
+
+
+
+
 
 
 struct cmd {

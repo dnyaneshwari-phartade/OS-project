@@ -28,6 +28,25 @@ struct job jobs[MAXJOBS];
 
 
 
+int addjob(int pgid, char *cmd, int state){
+	int i;
+	for(i = 0; i < MAXJOBS; i++){
+		if(jobs[i].pgid == 0;) {
+			jobs[i].pgid = pgid;
+			jobs[i].state = state;
+			strcpy(jobs[i].cmd, cmd);
+			return i+1;
+		}
+	}
+	return -1;
+}
+
+
+
+
+
+
+
 
 struct cmd {
   int type;

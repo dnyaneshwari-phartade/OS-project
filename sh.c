@@ -42,6 +42,25 @@ int addjob(int pgid, char *cmd, int state){
 }
 
 
+int jobnumber(char *arg){
+	int i, num;
+	if(arg[0] == 0){
+		for(i = MAXJOBS - 1; i>=0; i++)
+		   if(jobs[i].pgid != 0)
+		     return i+1;
+		     
+		return 0;
+	}
+	if(arg[0] != '%')
+	  return 0;
+	  
+	num = atoi(arg+1);
+	if(num<1 || num>MAXJOBS || jobs[num-1].pgid == 0)
+	  return 0;
+	
+	return num;
+}
+
 
 
 

@@ -13,6 +13,22 @@
 
 #define MAXARGS 10
 
+//added these :)
+#define MAXJOBS 8
+#define RUNNING 1
+#define STOPPED 2
+
+
+struct job {
+	int pgid;
+	int state;
+	char cmd[100];
+};
+struct job jobs[MAXJOBS];
+
+
+
+
 struct cmd {
   int type;
 };

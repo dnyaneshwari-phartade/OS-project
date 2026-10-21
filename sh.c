@@ -120,6 +120,96 @@ void waitfg(int id){
 }
 
 
+void runjob(char *cmd, int background){
+	int pid,id;
+	pid=fork1();
+	if(pid==0){
+		setpgid(0,0);
+		runcmd(parsecmd(cmd));
+	}
+	setpgid(pid, pid);
+
+	id=addjob(pid, cmd, RUNNING);
+	if(id < 0){
+		printf(1, "too many jobs\n");
+		killpg(pid);
+		wait();
+		return;
+	}
+	if(background)
+		printf(1, "[%d] %d\n", id, pid);
+	else 
+		waitfg(id);
+
+	
+}
+
+
+int builtin(char *line){
+	char tmp[100];
+	char *cmd, *arg;
+	int id;
+
+	strcpy(tmp, line);
+	cmd = tmp;
+	arg = tmp;
+	while(*arg != 0 && *arg != ' ')
+		arg++;
+	if(*arg == ' '){
+		*arg = 0;
+		arg++;
+		while(*arg == ' ')
+			arg++;
+	}
+
+	if(strcmp(cmp, "jobs")==0){
+		printjobs();
+		return 1;
+	}
+	if(strcmp(cmp, "fg")==0){
+		id = jobnumber(arg);
+		if(id == 0){
+			printf(1, "fg: no such job\n");
+			return 1;
+		}
+		printf(1, "%s\n", jobs[id-1].cmd);
+		jobs[id-1].state = RUNNING;
+		setfg(jobs[id-1].pgid);
+		contpg(jobs[id-1].pgid);
+		waitfg(id);
+		return 1;
+	}
+
+	if(strcmp(cmd, "bg")==0){
+		id = jobnumber(arg);
+		if(id==0){
+			printf(1, "bg:no such job\n");
+			return 1;
+		}
+
+		jobs[id-1[.state=RUNNING;
+		contpg(jobs[id-1].pgid);
+		printf(1, "[%d] %s &\n", id, jobs[id-1].cmd);
+		return 1;
+	}
+
+	if(strcmp(cmd, "kill")==0 && arg[0] == '%'){
+		id = jobnumber(arg);
+		if(id==0){
+			printf(1, "kill: no such jobs\n");
+			return 1;
+		}
+		killpg(jobs[id-1].pgid);
+		return 1;
+	}
+	return 0;
+	
+}
+
+
+
+
+
 
 
 
@@ -266,21 +356,64 @@ main(void)
     }
   }
 
-  // Read and run input commands.
-  while(getcmd(buf, sizeof(buf)) >= 0){
-    if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
-      // Chdir must be called by the parent, not the child.
-      buf[strlen(buf)-1] = 0;  // chop \n
-      if(chdir(buf+3) < 0)
-        printf(2, "cannot cd %s\n", buf+3);
-      continue;
-    }
-    if(fork1() == 0)
-      runcmd(parsecmd(buf));
-    wait();
-  }
-  exit();
+//   // Read and run input commands.
+//   while(getcmd(buf, sizeof(buf)) >= 0){
+//     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
+//       // Chdir must be called by the parent, not the child.
+//       buf[strlen(buf)-1] = 0;  // chop \n
+//       if(chdir(buf+3) < 0)
+//         printf(2, "cannot cd %s\n", buf+3);
+//       continue;
+//     }
+//     if(fork1() == 0)
+//       runcmd(parsecmd(buf));
+//     wait();
+//   }
+//   exit();
+// }
+
+//added here
+static char line[100];
+int n;
+
+while(1){
+	refreshjobs();
+	if(getcmd(buf, sizeof(buf)) < 0 )
+		break;
+
+	if(buf[0] == 'c' && buf[1]=='d' && buf[2]==' ' ){
+		buf[strlen(buf)-1]= 0 ;
+		if(chdir(buf+3) < 0)
+			printf(2, "cannont cd %s\n", buf+3);
+		continue;
+		
+	}
+
+	strcpy(line, buf);
+	n = strlen(line);
+	if(n>0 && line[n-1] == '\n')
+		line[--n] = 0;
+	if(n == 0)
+		continue;
+
+	if(builtin(line))
+		continue;
+
+	if(line[n-1]=='&'){
+		line[n-1]=0;
+		runjob(line, 1);
+		
+	}
+	else {
+		runjob(line, 0);
+	}
+
 }
+exit();
+
+
+//until here
+
 
 void
 panic(char *s)

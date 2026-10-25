@@ -19,6 +19,14 @@
 #define STOPPED 2
 
 
+//minor changes
+struct cmd;
+int fork1(void);
+struct cmd *parsecmd(char*);
+void runcmd(struct cmd*)__attribute__((noreturn));
+
+
+
 struct job {
 	int pgid;
 	int state;
@@ -31,7 +39,7 @@ struct job jobs[MAXJOBS];
 int addjob(int pgid, char *cmd, int state){
 	int i;
 	for(i = 0; i < MAXJOBS; i++){
-		if(jobs[i].pgid == 0;) {
+		if(jobs[i].pgid == 0) {
 			jobs[i].pgid = pgid;
 			jobs[i].state = state;
 			strcpy(jobs[i].cmd, cmd);
@@ -162,11 +170,11 @@ int builtin(char *line){
 			arg++;
 	}
 
-	if(strcmp(cmp, "jobs")==0){
+	if(strcmp(cmd, "jobs")==0){
 		printjobs();
 		return 1;
 	}
-	if(strcmp(cmp, "fg")==0){
+	if(strcmp(cmd, "fg")==0){
 		id = jobnumber(arg);
 		if(id == 0){
 			printf(1, "fg: no such job\n");
@@ -187,7 +195,7 @@ int builtin(char *line){
 			return 1;
 		}
 
-		jobs[id-1[.state=RUNNING;
+		jobs[id-1].state=RUNNING;
 		contpg(jobs[id-1].pgid);
 		printf(1, "[%d] %s &\n", id, jobs[id-1].cmd);
 		return 1;
@@ -411,7 +419,7 @@ while(1){
 }
 exit();
 
-
+}
 //until here
 
 

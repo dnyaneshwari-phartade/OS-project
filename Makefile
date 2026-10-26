@@ -181,6 +181,7 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_loop\
+	_jobtest\
 	_pgtest\
 	_zombie\
 	 
